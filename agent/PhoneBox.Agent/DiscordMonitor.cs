@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 
 namespace PhoneBox.Agent;
 
-public sealed record DiscordMember(string Id, string Name, bool Muted, bool Deafened, string? Avatar);
+public sealed record DiscordMember(string Id, string Name, bool Muted, bool Deafened, string? Avatar, bool Speaking = false);
 public sealed record DiscordChannel(string Id, string Name, string? Guild, string? GuildId, string? GuildIcon);
 public sealed record DiscordNotification(long Ts, string Title, string Body);
 public sealed record DiscordSnapshot(bool Connected, string? Error, string? User, bool Muted, bool Deafened,
@@ -29,6 +29,8 @@ public sealed partial class DiscordMonitor(ConfigStore config, ILogger<DiscordMo
     private volatile DiscordSnapshot _snap = Empty(null);
     private readonly object _lock = new();
     private readonly List<DiscordNotification> _notes = [];
+    private readonly HashSet<string> _speakingUsers = [];
+    private string? _subscribedVoiceChannelId;
     internal readonly ConcurrentDictionary<string, TaskCompletionSource<JsonNode?>> _pending = new(); // internal for tests
     private readonly SemaphoreSlim _send = new(1, 1);
     private Stream? _io;
@@ -114,6 +116,7 @@ public sealed partial class DiscordMonitor(ConfigStore config, ILogger<DiscordMo
             var user = await Authenticate(cfg, ct);
             _loggedIn = true;
             log.LogInformation("discord: connected");
+            try { await Request("SUBSCRIBE", new JsonObject(), "VOICE_CHANNEL_SELECT", ct); } catch { }
             var subscribed = false;
             _guildChannels.Clear();
             var channelsAt = DateTime.MinValue;
@@ -138,12 +141,32 @@ public sealed partial class DiscordMonitor(ConfigStore config, ILogger<DiscordMo
                 var rev = Volatile.Read(ref _voiceRev);
                 var vs = await Request("GET_VOICE_SETTINGS", null, null, ct);
                 var sel = await Request("GET_SELECTED_VOICE_CHANNEL", null, null, ct);
-                var members = sel?["voice_states"]?.AsArray().Select(v => new DiscordMember(
-                    v?["user"]?["id"]?.GetValue<string>() ?? "",
-                    v?["nick"]?.GetValue<string>() ?? v?["user"]?["global_name"]?.GetValue<string>() ?? v?["user"]?["username"]?.GetValue<string>() ?? "?",
-                    v?["voice_state"]?["mute"]?.GetValue<bool>() == true || v?["voice_state"]?["self_mute"]?.GetValue<bool>() == true,
-                    v?["voice_state"]?["deaf"]?.GetValue<bool>() == true || v?["voice_state"]?["self_deaf"]?.GetValue<bool>() == true,
-                    v?["user"]?["avatar"]?.GetValue<string>())).ToList() ?? [];
+                var curChanId = sel?["id"]?.GetValue<string>();
+                if (curChanId != _subscribedVoiceChannelId)
+                {
+                    if (_subscribedVoiceChannelId is not null)
+                    {
+                        try { await Request("UNSUBSCRIBE", new JsonObject { ["channel_id"] = _subscribedVoiceChannelId }, "SPEAKING", ct); } catch { }
+                        lock (_lock) _speakingUsers.Clear();
+                    }
+                    if (curChanId is not null)
+                    {
+                        try { await Request("SUBSCRIBE", new JsonObject { ["channel_id"] = curChanId }, "SPEAKING", ct); } catch { }
+                    }
+                    _subscribedVoiceChannelId = curChanId;
+                }
+                var members = sel?["voice_states"]?.AsArray().Select(v => {
+                    var uid = v?["user"]?["id"]?.GetValue<string>() ?? "";
+                    bool isSpk;
+                    lock (_lock) isSpk = _speakingUsers.Contains(uid);
+                    return new DiscordMember(
+                        uid,
+                        v?["nick"]?.GetValue<string>() ?? v?["user"]?["global_name"]?.GetValue<string>() ?? v?["user"]?["username"]?.GetValue<string>() ?? "?",
+                        v?["voice_state"]?["mute"]?.GetValue<bool>() == true || v?["voice_state"]?["self_mute"]?.GetValue<bool>() == true,
+                        v?["voice_state"]?["deaf"]?.GetValue<bool>() == true || v?["voice_state"]?["self_deaf"]?.GetValue<bool>() == true,
+                        v?["user"]?["avatar"]?.GetValue<string>(),
+                        isSpk);
+                }).ToList() ?? [];
                 var kind = sel?["type"]?.GetValue<int>() switch { 1 => "call", 3 => "group call", 2 => "voice", 13 => "stage", _ => sel is null ? null : "voice" };
                 PublishPoll(rev, vs?["mute"]?.GetValue<bool>() == true, vs?["deaf"]?.GetValue<bool>() == true,
                     new DiscordSnapshot(true, null, user, false, false,
@@ -175,13 +198,34 @@ public sealed partial class DiscordMonitor(ConfigStore config, ILogger<DiscordMo
             tokens = await Exchange(cfg, new() { ["grant_type"] = "refresh_token", ["refresh_token"] = tokens.Refresh }, ct);
         if (tokens is not null)
         {
-            try { return await Auth(tokens.Access, ct); } catch (Exception ex) { log.LogInformation("discord: saved login no longer works ({Msg})", ex.Message); }
+            try { return await Auth(tokens.Access, ct); }
+            catch (Exception ex)
+            {
+                log.LogInformation("discord: saved login no longer works ({Msg}), attempting refresh", ex.Message);
+                try
+                {
+                    tokens = await Exchange(cfg, new() { ["grant_type"] = "refresh_token", ["refresh_token"] = tokens.Refresh }, ct);
+                    if (tokens is not null) return await Auth(tokens.Access, ct);
+                }
+                catch (Exception refEx)
+                {
+                    log.LogInformation("discord: token refresh failed ({Msg})", refEx.Message);
+                }
+            }
         }
         const string retry = " PhoneBox will not ask again until you change the Discord settings (or turn Discord off and on).";
         JsonNode? granted;
         try { granted = await Request("AUTHORIZE", new JsonObject { ["client_id"] = cfg.ClientId, ["scopes"] = new JsonArray(Scopes.Select(s => (JsonNode)s).ToArray()) }, null, ct, TimeSpan.FromMinutes(2)); }
         catch (TimeoutException) { throw new LoginRefusedException("PhoneBox was not approved in Discord in time." + retry); }
-        catch (Exception ex) when (ex is not (OperationCanceledException or IOException)) { throw new LoginRefusedException($"Discord login was refused ({ex.Message})." + retry); }
+        catch (Exception ex) when (ex is not (OperationCanceledException or IOException))
+        {
+            if (ex.Message.Contains("already authing", StringComparison.OrdinalIgnoreCase))
+            {
+                log.LogInformation("discord: already authenticating, will retry shortly");
+                throw new IOException("Discord is already authenticating");
+            }
+            throw new LoginRefusedException($"Discord login was refused ({ex.Message})." + retry);
+        }
         // no answer at all means the connection ended (Discord closed or restarted): that is not a refusal
         var code = granted?["code"]?.GetValue<string>() ?? throw new IOException("Discord closed the connection");
         try { tokens = await Exchange(cfg, new() { ["grant_type"] = "authorization_code", ["code"] = code, ["redirect_uri"] = Redirect }, ct); }
@@ -366,6 +410,45 @@ public sealed partial class DiscordMonitor(ConfigStore config, ILogger<DiscordMo
                     lock (_lock) { _notes.Insert(0, new(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), title, body)); if (_notes.Count > 20) _notes.RemoveAt(20); }
                     continue;
                 }
+                if (evt == "VOICE_CHANNEL_SELECT")
+                {
+                    var chId = JsonStr((obj["data"] as JsonObject)?["channel_id"]);
+                    if (chId is null)
+                    {
+                        lock (_lock)
+                        {
+                            _speakingUsers.Clear();
+                            _snap = _snap with { ChannelId = null, ChannelName = null, ChannelKind = null, Members = [] };
+                        }
+                        StateSignal.Poke();
+                    }
+                    continue;
+                }
+                if (evt == "SPEAKING")
+                {
+                    if (obj["data"] is JsonObject d && JsonStr(d["user_id"]) is { } uid)
+                    {
+                        var isSpeaking = false;
+                        if (d["speaking"] is JsonValue sv)
+                        {
+                            if (sv.TryGetValue<int>(out var iv)) isSpeaking = iv > 0;
+                            else if (sv.TryGetValue<bool>(out var bv)) isSpeaking = bv;
+                        }
+                        lock (_lock)
+                        {
+                            if (isSpeaking) _speakingUsers.Add(uid);
+                            else _speakingUsers.Remove(uid);
+
+                            if (_snap.Members.Count > 0)
+                            {
+                                var updatedMembers = _snap.Members.Select(m => m with { Speaking = _speakingUsers.Contains(m.Id) }).ToList();
+                                _snap = _snap with { Members = updatedMembers };
+                            }
+                        }
+                        StateSignal.Poke();
+                    }
+                    continue;
+                }
                 var id = JsonStr(obj["nonce"]);
                 if (id is null || !_pending.TryRemove(id, out var tcs)) continue;
                 if (evt == "ERROR") tcs.TrySetException(new Exception(JsonStr((obj["data"] as JsonObject)?["message"]) ?? "Discord refused the request"));
@@ -375,9 +458,11 @@ public sealed partial class DiscordMonitor(ConfigStore config, ILogger<DiscordMo
         finally
         {
             _notesWanted = false;
+            _subscribedVoiceChannelId = null;
             lock (_lock)
             {
                 _closed = true; // a poll still finishing for this connection must not bring "connected" back
+                _speakingUsers.Clear();
                 _notes.Clear();
                 if (_snap.Connected) _snap = Empty(config.Get().Discord.Enabled ? "Discord is not running" : null);
             }
@@ -457,7 +542,7 @@ public sealed partial class DiscordMonitor(ConfigStore config, ILogger<DiscordMo
 
     /// <summary>Control needs a Discord widget with the control option on, on a page that is enabled.</summary>
     public static bool ControlAllowed(AgentConfig cfg) =>
-        cfg.Widgets(enabledPagesOnly: true).Any(w => w.Type == "discord" && w.Bool("control") == true);
+        cfg.Widgets(enabledPagesOnly: true).Any(w => (w.Type == "discord" || w.Type == "discord-voice") && w.Bool("control") == true);
 
     // Discord answers a settings change with the new settings; take the state from that, not from the next poll.
     internal void ApplyVoice(JsonNode? vs)

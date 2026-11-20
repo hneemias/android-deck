@@ -21,7 +21,9 @@ public sealed partial class BatteryMonitor(ILogger<BatteryMonitor> log) : Backgr
     private readonly object _publishLock = new();
     private IReadOnlyList<DeviceBattery> _btDevices = [];
     private IReadOnlyList<DeviceBattery> _razerDevices = [];
-    private Task? _razerTask;
+    private IReadOnlyList<DeviceBattery> _logitechDevices = [];
+    private IReadOnlyList<DeviceBattery> _vendorDevices = [];
+    private Task? _hidTask;
 #endif
     private long _lastRequest = NoRequest;
     private long? _readAt;
@@ -49,22 +51,33 @@ public sealed partial class BatteryMonitor(ILogger<BatteryMonitor> log) : Backgr
                     lock (_publishLock)
                     {
                         _btDevices = bt;
-                        _devices = SortDevices(MergeRazerIntoBluetooth(_btDevices, _razerDevices));
+                        _devices = SortDevices(MergeAllDevices(_btDevices, _razerDevices, _logitechDevices, _vendorDevices));
                     }
                 }
                 catch (Exception ex) { log.LogDebug("batteries: {Msg}", ex.Message); }
 
-                if (_razerTask is null || _razerTask.IsCompleted)
+                if (_hidTask is null || _hidTask.IsCompleted)
                 {
-                    _razerTask = Task.Run(() =>
+                    _hidTask = Task.Run(() =>
                     {
-                        var (razer, error) = WindowsRazer();
-                        if (error is not null) log.LogDebug("batteries (razer): {Msg}", error);
-                        lock (_publishLock)
+                        try
                         {
-                            _razerDevices = razer;
-                            _devices = SortDevices(MergeRazerIntoBluetooth(_btDevices, _razerDevices));
+                            var (razer, rErr) = WindowsRazer();
+                            if (rErr is not null) log.LogDebug("batteries (razer): {Msg}", rErr);
+                            var (logi, lErr) = WindowsLogitech();
+                            if (lErr is not null) log.LogDebug("batteries (logitech): {Msg}", lErr);
+                            var (vend, vErr) = WindowsVendors();
+                            if (vErr is not null) log.LogDebug("batteries (vendors): {Msg}", vErr);
+
+                            lock (_publishLock)
+                            {
+                                _razerDevices = razer;
+                                _logitechDevices = logi;
+                                _vendorDevices = vend;
+                                _devices = SortDevices(MergeAllDevices(_btDevices, _razerDevices, _logitechDevices, _vendorDevices));
+                            }
                         }
+                        catch (Exception ex) { log.LogDebug("batteries (hid): {Msg}", ex.Message); }
                     }, ct);
                 }
 #else
@@ -74,6 +87,24 @@ public sealed partial class BatteryMonitor(ILogger<BatteryMonitor> log) : Backgr
             }
             await Task.Delay(1000, ct);
         }
+    }
+
+    internal static List<DeviceBattery> MergeAllDevices(params IEnumerable<DeviceBattery>[] sources)
+    {
+        if (sources.Length == 0) return [];
+        var list = sources[0].ToList();
+        for (int s = 1; s < sources.Length; s++)
+        {
+            foreach (var dev in sources[s])
+            {
+                var idx = list.FindIndex(b => string.Equals(b.Name, dev.Name, StringComparison.OrdinalIgnoreCase));
+                if (idx < 0)
+                    list.Add(dev);
+                else if (PreferDevice(dev, list[idx]))
+                    list[idx] = dev;
+            }
+        }
+        return list;
     }
 
     private static List<DeviceBattery> SortDevices(IEnumerable<DeviceBattery> list)

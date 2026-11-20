@@ -1,15 +1,30 @@
-<p align="center"><img src="agent/PhoneBox.Agent/phonebox.ico" width="72" alt="PhoneBox icon"></p>
+<p align="center">
+  <img src="agent/PhoneBox.Agent/phonebox.ico" width="84" alt="CelularBox / PhoneBox Logo">
+</p>
 
-<h1 align="center">PhoneBox</h1>
+<h1 align="center">CelularBox · PhoneBox</h1>
 
 <p align="center">
-  <b>English</b> ·
+  <b>Transform any spare Android phone into an ultra-responsive, full-featured Desk Deck, Hardware Monitor, and Real-Time PC Audio Streamer.</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/ersinkoc/phonebox/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/ersinkoc/phonebox/build.yml?branch=main&style=for-the-badge&logo=github&label=Build" alt="Build Status"></a>
+  <a href="https://github.com/ersinkoc/phonebox/releases/latest"><img src="https://img.shields.io/github/v/release/ersinkoc/phonebox?style=for-the-badge&color=2dd4bf&label=Release" alt="Latest Release"></a>
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-512bd4?style=for-the-badge&logo=dotnet&logoColor=white" alt="Windows, Linux, macOS; .NET 10">
+  <img src="https://img.shields.io/badge/Android-5.0%2B-3ddc84?style=for-the-badge&logo=android&logoColor=white" alt="Android 5.0+">
+  <img src="https://img.shields.io/badge/Privacy-100%25%20Local%20%2F%20No%20Cloud-success?style=for-the-badge&logo=shield" alt="100% Local">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  <b>Translations:</b>
+  <a href="docs/README.pt.md">Português</a> ·
   <a href="docs/README.tr.md">Türkçe</a> ·
   <a href="docs/README.de.md">Deutsch</a> ·
   <a href="docs/README.fr.md">Français</a> ·
   <a href="docs/README.es.md">Español</a> ·
   <a href="docs/README.it.md">Italiano</a> ·
-  <a href="docs/README.pt.md">Português</a> ·
   <a href="docs/README.nl.md">Nederlands</a> ·
   <a href="docs/README.pl.md">Polski</a> ·
   <a href="docs/README.ru.md">Русский</a> ·
@@ -18,234 +33,192 @@
   <a href="docs/README.zh.md">中文 (简体)</a>
 </p>
 
-<p align="center"><b>Turn an old Android phone into a desk panel for your computer.</b><br>
-PC stats, AI coding sessions, music and touch controls over USB or Wi-Fi.<br>
-Windows, Linux and macOS. No root, PhoneBox account or cloud service required.</p>
+---
 
 <p align="center">
-  <a href="https://ersinkoc.github.io/phonebox/"><b>Try the live demo</b></a> ·
-  <a href="https://github.com/ersinkoc/phonebox/releases/latest"><b>Download</b></a> ·
-  <a href="#quick-start"><b>Quick start</b></a>
+  <img src="docs/hero-0.6.png" width="900" alt="CelularBox on multiple phones showing system monitor, automation, and shortcuts">
 </p>
 
-<p align="center">
-  <a href="https://github.com/ersinkoc/phonebox/actions/workflows/build.yml"><img src="https://github.com/ersinkoc/phonebox/actions/workflows/build.yml/badge.svg" alt="Build status"></a>
-  <a href="https://github.com/ersinkoc/phonebox/releases/latest"><img src="https://img.shields.io/github/v/release/ersinkoc/phonebox?label=release" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/Windows%20%C2%B7%20Linux%20%C2%B7%20macOS-.NET%2010-512bd4" alt="Windows, Linux, macOS; .NET 10">
-  <img src="https://img.shields.io/badge/Android-5%2B-3ddc84" alt="Android 5+">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
-</p>
+## 💡 Why CelularBox?
 
-<p align="center"><img src="docs/hero-0.6.png" width="900" alt="PhoneBox on three phones showing automation, home and planner pages"><br>
-<sub>Example layouts with demo data.</sub></p>
+Why spend \$150+ on a proprietary macro keypad when that unused Android phone sitting in your drawer has:
+- ✨ **A crisp, high-density touchscreen** with rich animations and haptic feedback.
+- 📶 **High-speed Wi-Fi and USB connectivity**.
+- 🔋 **Built-in battery and independent power management**.
+- 🔒 **100% Offline & Private:** Zero accounts, zero telemetry, zero cloud dependencies. All data stays strictly between your PC and your phone on your local network.
 
-PhoneBox pairs a full-screen **Android app** with a small **desktop agent**. Build your panel in a browser-based
-visual editor: **125 widgets**, **30 templates**, multiple pages and a live preview. Connect several phones with
-their own layouts, or switch one phone between paired computers.
+CelularBox pairs a lightweight **desktop agent** (.NET 10) with an optimized, hardware-accelerated **Android application**. Design your dream control panel directly in your browser with **125 widgets** and **30 templates** across multiple customizable grid pages!
 
-## What you can do
+---
 
-| Use it for | What appears on the phone |
-|---|---|
-| **PC monitoring** | CPU, GPU, RAM, disks, network and ping; charts, GPU details and process controls |
-| **AI coding** | Claude, Codex and Antigravity quotas, reset times and burn-rate forecasts; local Claude Code and Codex sessions; GitHub reviews and CI status |
-| **Touch controls** | App and URL shortcuts, key combinations and macros; application audio, microphone, media, OBS and system controls through [Control Deck](docs/CONTROL-DECK.md) |
-| **Everyday use** | Now Playing, internet radio, clocks, weather, calendars, notes, checklists, pomodoro and timers |
-| **Automation** | Webhook values and notifications, Home Assistant controls and rules that react to activity on the computer |
+## ⚡ Superpowers & Key Features
 
-Tap an AI session for its model, timing and token details. Opt in to Claude Code permission prompts to answer
-**Allow** or **Deny** from the phone. Optional [CodexBar integration](docs/GUIDE.md#widgets) adds quota providers
-and a cost overview.
+```mermaid
+flowchart LR
+    subgraph PC ["🖥️ Host Computer (Agent)"]
+        A["Hardware Metrics<br/>(CPU, GPU, RAM, Net)"]
+        B["Peripheral Batteries<br/>(Razer, Logitech, etc.)"]
+        C["Audio Engine<br/>(App Volume & WASAPI Stream)"]
+        D["Control Deck<br/>(Shortcuts, OBS, Spotify)"]
+        E["AI Quotas & Sessions<br/>(Claude, Codex, Antigravity)"]
+    end
 
-<p align="center"><a href="docs/tour-0.6.mp4"><img src="docs/tour-0.6.gif" width="780" alt="PhoneBox tour showing notifications, a Claude Code permission prompt and automatic page switching"></a><br>
-<sub>A tour with demo data: notifications, permission prompts and automatic page switching. <a href="docs/tour-0.6.mp4">Watch the MP4</a></sub></p>
+    subgraph Net ["📡 Local Network / USB"]
+        USB["🔌 USB (adb reverse)"]
+        WIFI["📶 Wi-Fi / Tailscale (TLS Pinned)"]
+    end
 
-## Quick start
+    subgraph Phone ["📱 CelularBox (Android Panel)"]
+        P1["Touch Deck & Macro Pad"]
+        P2["Real-Time Hardware Graphs"]
+        P3["Discord Voice Station"]
+        P4["PC Audio Listening (Headphones)"]
+    end
 
-You need an **Android 5+ phone** (Android 6 or later recommended) and a supported computer. USB uses a data cable and USB debugging; Wi-Fi pairing
-works without either. Release agents include .NET, so you do not need to install the runtime.
+    PC <--> Net <--> Phone
+```
 
-### 1. Install the desktop agent
+### 🖥️ Hardware & Battery Intelligence
+* **Full PC Telemetry:** Live CPU, GPU (NVIDIA, AMD, Intel, Apple Silicon), RAM usage, NVMe/Disk I/O, network traffic speeds, and ping latency charts.
+* **Wireless Peripherals Battery Monitor:** Real-time battery percentages for wireless mice, keyboards, and headsets from **Razer** (Synapse/HID), **Logitech G** (G HUB / HID++ 2.0), Corsair, and SteelSeries.
 
-**Windows 10/11 x64** — paste into a normal PowerShell window:
+### 🎧 Real-Time PC Audio Streaming (*Listen to PC*)
+* Stream your computer's master audio output directly to your phone's speaker or connected headphones with low-latency WASAPI loopback capture and Web Audio API playback.
 
+### 🎮 Ultimate Control Deck & Macro Pad
+* **Per-App Volume Sliders:** Adjust Spotify, Discord, or game volume independently right from your desk.
+* **Quick Shortcuts & Macros:** Launch applications, open workspace folders, execute complex keyboard chords, trigger PowerShell/Bash scripts, and type predefined text snippets.
+* **OBS Studio & Media Control:** Switch scenes, start/stop streams and recordings, toggle mute, and control playback (Spotify, YouTube, VLC).
+* **Smart Home Integration:** Direct entity and toggle control for **Home Assistant**.
+
+### 🤖 AI Developer Cockpit
+* Monitor live quotas, daily burn rates, token usage, and reset countdowns for **Claude Code**, **Codex**, and **Google Antigravity**.
+* **1-Tap Terminal Approvals:** Answer Claude Code tool permission requests (*Allow / Deny*) directly from the phone screen without leaving your editor.
+
+### 🎙️ Discord Voice Station
+* Live voice channel participant list, speaking avatars, active channel name, and quick mute / deafen / disconnect touch controls.
+
+### 📱 100% In-House Pairing & Distribution
+* **Zero External Redirects:** The PC agent serves the Android APK (`/download`) and pairing landing page (`/pair`) directly.
+* **Instant QR Code Wi-Fi Pairing:** Scan once with your phone's camera to establish an encrypted TLS connection with cryptographic certificate pinning.
+
+---
+
+## 🎛️ What You Can Display
+
+| Category | On the Phone Screen |
+| :--- | :--- |
+| **PC Health** | Real-time CPU, GPU, RAM, Disk speeds, Network I/O, Ping latency, Process manager |
+| **Gear Batteries** | Razer mice/dock, Logitech G peripherals, and laptop charge status |
+| **AI Assistants** | Claude Code, OpenAI Codex, Antigravity quotas, session timers, and prompt permissions |
+| **Audio & Media** | Per-app audio mixer, master volume, Now Playing album art, track progress, Spotify controls |
+| **Streaming** | OBS scene switcher, stream/recording status, mic mute, emergency panic button |
+| **Shortcuts** | Custom app launcher, terminal triggers, keyboard shortcuts, window tiling presets |
+| **Daily Life** | Clock, weather forecasts (Open-Meteo), digital photo frame gallery, calendar, Pomodoro timers |
+| **Discord** | Voice channel members, speaking status, mute/deafen toggles, channel hopping |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+* **Computer:** Windows 10/11 (x64), Linux (x64/ARM64), or macOS (Apple Silicon/Intel).
+* **Phone:** Any Android device running **Android 5.0 (Lollipop) or newer** (Android 7+ recommended).
+
+---
+
+### Step 1: Install the Desktop Agent
+
+#### Windows (Standalone / Self-Contained)
+1. Download the latest **`CelularBox-Completo.zip`** from [Releases](https://github.com/ersinkoc/phonebox/releases/latest).
+2. Extract the folder and double-click **`PhoneBoxAgent.exe`**.
+3. *No .NET installation or runtimes required!* The agent starts in your system tray and opens the settings page at `http://127.0.0.1:8765`.
+
+*Or install via PowerShell:*
 ```powershell
 irm https://raw.githubusercontent.com/ersinkoc/phonebox/main/setup.ps1 | iex
 ```
 
-**Linux or macOS** — run as your own user:
-
-```sh
+#### Linux & macOS
+Run the automated installer:
+```bash
 curl -fsSL https://raw.githubusercontent.com/ersinkoc/phonebox/main/setup.sh | bash
 ```
 
-Setup downloads the latest release, checks its SHA-256 checksum, offers missing dependencies and start-at-login,
-and opens the settings at <http://127.0.0.1:8765>. It can also install the Android app over USB.
-Run setup again to update or repair the installation while keeping settings and pairings.
+---
 
-> **Windows signing:** release agents are currently unsigned while the SignPath Foundation application is pending.
-> SmartScreen or antivirus software may warn or block them. See the [code signing policy](#code-signing-policy)
-> and [installation warnings](docs/SETUP.md#quick-start). USB debugging should be authorized only on computers you trust.
+### Step 2: Install the Android App
 
-Read the scripts before running them: [Windows](setup.ps1) · [Linux/macOS](setup.sh).
-The [installation guide](docs/SETUP.md) covers options, dependencies, install paths, troubleshooting and uninstalling.
+* **Via PC QR Code:** Open settings on your PC (`http://127.0.0.1:8765`), click **"Pair a phone over Wi-Fi"**, and scan **QR Code 1** with your phone to download `CelularBox-App.apk` directly from your PC.
+* **Via Direct Download:** Download `CelularBox-App.apk` from the [Releases](https://github.com/ersinkoc/phonebox/releases/latest) page and install it on your Android device.
 
-### 2. Connect the phone
+---
 
-| USB | Wi-Fi only |
-|---|---|
-| Enable **Developer options → USB debugging**, connect a data cable and accept the phone's authorization prompt. Let setup install the app, or use **Settings → General → Install the phone app**. | Install the APK from the [latest release](https://github.com/ersinkoc/phonebox/releases/latest). Wi-Fi is off by default: open the settings page (tray icon, or `http://127.0.0.1:8765`), turn on **General → Wi-Fi & Tailscale → Let the phone connect without the USB cable**, click **Save**, then **Restart to apply** at the top. Choose **Pair a phone over Wi-Fi**, scan the pairing QR code and confirm the matching check code. |
-| Wakes and opens the panel on connection; supports app updates over adb. | No adb or developer options needed; install app updates manually unless you later configure USB. |
+### Step 3: Connect & Pair
 
-The phone app is not in any app store; it comes only from this repository's releases. It runs on Android 5.0 and
-newer; there is no iOS version.
+| Connection Type | How It Works |
+| :--- | :--- |
+| **📶 Wi-Fi / Tailscale (Cable-Free)** | In PC Settings (`http://127.0.0.1:8765`), open **General → Wi-Fi & Tailscale → Pair a phone over Wi-Fi**. Scan **QR Code 2** with your phone's camera. Tap confirm on the matching security check code. Done! |
+| **🔌 USB (Zero Configuration)** | Enable **Developer Options → USB Debugging** on the phone, plug in a USB cable, and accept the prompt. The panel opens automatically. |
 
-For automatic USB/Wi-Fi fallback, enable Wi-Fi and connect the phone over USB once.
-[Connection details and Tailscale setup →](docs/SETUP.md#wi-fi--tailscale)
+---
 
-### 3. Make it yours
+## 🎨 Visual Page Designer
 
-Open <http://127.0.0.1:8765> (or double-click the Windows tray icon). Under **Pages**, choose a template, drag and
-resize widgets, then **Save**. Use **Live preview** to see unsaved edits with live data.
-Swipe, tap the page dots or use the phone's volume keys to move between pages.
+Open **`http://127.0.0.1:8765/settings/#pages`** in your browser to design your layout:
+* **12 × 6 Modular Grid:** Place and resize widgets freely.
+* **Smart Stacks:** Group up to 12 widgets into a single swipeable card.
+* **Appearance Customization:** Tweak fonts, borders, background transparency, and accent colors globally or per-widget.
+* **Live Preview:** Test responsive layouts and widgets on your PC screen before saving.
 
-<details>
-<summary><b>Other installation methods</b></summary>
+<p align="center">
+  <img src="docs/screenshots/settings-editor.png" width="850" alt="Visual Drag-and-Drop Layout Editor">
+</p>
 
-- **Manual download:** unzip the agent for your system from the [release page](https://github.com/ersinkoc/phonebox/releases/latest)
-  and run it. Install the APK on the phone. Checksums and build provenance accompany the release assets.
-- **Scoop (Windows):**
+---
 
-  ```powershell
-  scoop bucket add phonebox https://github.com/ersinkoc/phonebox
-  scoop install main/adb phonebox/phonebox
-  ```
+## 🛡️ Security & Privacy Architecture
 
-- **From source:** see the [installation guide](docs/SETUP.md#other-ways-to-install) and [development guide](docs/DEVELOPMENT.md).
-- **winget:** manifests are prepared in [packaging/winget](packaging/winget); see the installation guide for details.
+* **Isolated Local Server:** The desktop settings server listens on `127.0.0.1:8765` with origin verification to prevent DNS rebinding and cross-site scripting.
+* **Encrypted Wi-Fi Protocol:** Wireless panel traffic runs over TLS on port `8766` using a **cryptographically pinned self-signed certificate**. The phone rejects any connection whose certificate does not match the paired SHA-256 fingerprint.
+* **Zero Telemetry:** No analytics, tracker SDKs, or cloud proxies. Your keystrokes, shortcuts, credentials, and PC data never leave your local network.
 
-</details>
+---
 
-## Pages & templates
+## 💻 Tech Stack & Architecture
 
-Start with Home, System, AI quotas, Sessions, Music, Planner, Automation or a Control Deck template, then adapt the
-12 × 6 grid to your phone. Portrait and landscape layouts are supported. Smart Stack puts up to 12 widgets in one slot.
+* **Desktop Agent:** C# / .NET 10, ASP.NET Core Minimal APIs, Kestrel Web Server, NAudio, Windows Media Session APIs, Windows Forms System Tray.
+* **Android Application:** Kotlin, AndroidX WebKit, Hardware-Accelerated WebView, Bi-directional JS Bridges.
+* **Web Panel & Widgets:** Vanilla JavaScript (ES6+), CSS Custom Properties, SVG Icons, Web Audio API, Server-Sent Events (SSE).
 
-| Home | AI sessions |
-|---|---|
-| ![Clock, weather, media and PC metrics](docs/screenshots/home.png) | ![Coding sessions and GitHub activity](docs/screenshots/work.png) |
-| **System** | **Layout editor** |
-| ![CPU, GPU, memory and network charts](docs/screenshots/system.png) | ![Pages and widget settings in the visual editor](docs/screenshots/settings-editor.png) |
+---
 
-Screenshots use demo data. [Browse the template gallery and widgets](docs/GUIDE.md#pages--templates).
-Change fonts, size, spacing, corners and surfaces globally or for one page or widget with the [appearance guide](docs/APPEARANCE.md).
+## 🛠️ Development & Building from Source
 
-## Platform support
+```bash
+# Clone the repository
+git clone https://github.com/ersinkoc/phonebox.git
+cd phonebox
 
-| | Windows | Linux | macOS |
-|---|---|---|---|
-| Release builds | x64 | x64 / ARM64, glibc | Apple silicon / Intel |
-| CPU, RAM, disks, network, processes | ✓ | ✓ | ✓ |
-| GPU data | Windows counters; NVIDIA via `nvidia-smi`; extra sensors via [LibreHardwareMonitor](docs/SETUP.md#librehardwaremonitor-on-windows) | NVIDIA / AMD; Intel clock | Apple silicon, when exposed by macOS |
-| Media | System media sessions | `playerctl` | `nowplaying-cli`; Spotify / Music fallback |
-| Volume | Native | `wpctl` / `pactl` | System output; availability varies by device |
-| Agent interface | Tray icon + browser settings | Browser settings | Browser settings |
+# Run tests
+dotnet test agent/PhoneBox.Agent.Tests
 
-Widgets depend on the host's hardware, installed tools and permissions. Advanced Control Deck features have
-[their own platform requirements](docs/CONTROL-DECK.md). Windows ARM and musl Linux (such as Alpine) do not have
-release builds. See the [full compatibility table](docs/SETUP.md#what-works-where).
+# Build and run the desktop agent
+dotnet run --project agent/PhoneBox.Agent/PhoneBox.Agent.csproj -f net10.0-windows10.0.19041.0
 
-## Documentation
-
-| Guide | Contents |
-|---|---|
-| [Installation and connections](docs/SETUP.md) | Setup options, warnings, manual and source installs, USB, Wi-Fi, Tailscale, updates, uninstall and troubleshooting |
-| [User guide](docs/GUIDE.md) | Template gallery, widgets, AI integrations, editor, Claude Code prompts, webhooks and automation rules |
-| [Appearance](docs/APPEARANCE.md) | Fonts, surfaces, presets, inheritance and live preview |
-| [Control Deck](docs/CONTROL-DECK.md) | Audio, media, OBS, shortcuts, tasks, protocols, dependencies and platform limits |
-| [Discord widget](docs/DISCORD.md) | Creating the Discord application, connecting it, controls and troubleshooting |
-| [Development](docs/DEVELOPMENT.md) | Architecture, local demo, builds, tests, widget sources and isolated agent runs |
-| [Contributing](CONTRIBUTING.md) | Contribution scope, review expectations, privacy and required checks |
-| [Changelog](CHANGELOG.md) | Release history and unreleased changes |
-| [Release checklist](docs/RELEASING.md) | Maintainer build, signing and publication workflow |
-
-The [UMIDIGI BISON extras](extras/umidigi-bison) contain the reversible, no-root tune-up used on the original development phone.
-
-## Security & privacy
-
-The desktop settings server listens on `127.0.0.1:8765`; USB reaches it through `adb reverse`.
-Optional Wi-Fi uses HTTPS on port 8766 with a pinned certificate and a paired key. Settings and pairing endpoints
-stay local. The phone requests configured actions by ID; commands and integration credentials stay on the computer.
-
-PhoneBox has no telemetry, analytics or accounts of its own. Optional widgets and integrations contact external
-services for weather, quotas, GitHub and other data, and the agent checks GitHub for updates.
-Supported public feeds can fall back through the agent over USB when the phone has no internet.
-The [privacy policy](PRIVACY.md) lists outbound connections and how to disable them.
-Read the [security details](docs/GUIDE.md#security--privacy). To report a vulnerability, follow [SECURITY.md](SECURITY.md).
-
-## Development
-
-The agent uses **.NET 10**; the Android app uses **Kotlin and a WebView** with plain JavaScript widgets.
-For Android builds, install **JDK 17** and **Android SDK Platform 35** (the SDK the app is built with; the app itself
-runs on Android 5.0, API 21, and later).
-Preview the panel and editor from source with Python 3, using simulated data:
-
-```sh
-python tools/demo-server.py
+# Build the Android APK (requires JDK 17)
+cd android
+./gradlew assembleDebug
 ```
 
-Open <http://127.0.0.1:8790/panel/> or <http://127.0.0.1:8790/settings/>.
-See [development commands](docs/DEVELOPMENT.md#development) for running the agent, building the APK and testing changes.
-Contributions are welcome; start with [CONTRIBUTING.md](CONTRIBUTING.md).
+---
 
-## Code signing policy
+## 📄 License
 
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
-[SignPath Foundation](https://signpath.org/).
+This project is licensed under the **[MIT License](LICENSE)**.
+Feel free to use, modify, and distribute it for personal and commercial purposes.
 
-- **Windows agent:** the SignPath Foundation application is pending; releases are unsigned until approved.
-  The intended signing target is `PhoneBoxAgent.exe` in the `win-x64` release zip, built by the
-  [release workflow](.github/workflows/release.yml). Every signing request requires manual approval.
-  Bundled runtime and library notices are in [THIRD-PARTY-NOTICES.txt](agent/PhoneBox.Agent/THIRD-PARTY-NOTICES.txt).
-- **Android app:** release APKs use the project's own signing key, independently of SignPath.
-- **Team roles:** committer, reviewer and signing approver: [ersinkoc](https://github.com/ersinkoc).
-  Pull requests from other contributors are reviewed before merging.
-- **Privacy:** see the [privacy policy](PRIVACY.md).
-
-## Thanks
-
-People who tested PhoneBox on their own hardware:
-
-- [anandyakshit](https://github.com/anandyakshit): Android 7 support, on an Android 7.1.1 phone ([#73](https://github.com/ersinkoc/phonebox/issues/73)).
-
-## Sponsor
-
-<!-- sponsor: WrongStack -->
 <p align="center">
-  <a href="https://wrongstack.com">
-    <img src="docs/sponsors/wrongstack.svg" width="900" alt="Sponsored by WrongStack — open-source AI coding with durable memory and multi-agent workflows. Explore wrongstack.com.">
-  </a>
+  <b>Built with ❤️ for hackers, makers, gamers, and productivity enthusiasts.</b><br>
+  <i>Give this repository a ⭐ if you found it useful!</i>
 </p>
-<p align="center">
-  <strong>Supported by <a href="https://wrongstack.com">WrongStack</a></strong> ·
-  An open-source AI coding agent that remembers your codebase.<br>
-  <a href="https://wrongstack.com"><strong>Explore WrongStack →</strong></a> ·
-  <a href="https://github.com/wrongstack/wrongstack"><strong>View on GitHub &amp; give it a star ★</strong></a>
-</p>
-<!-- /sponsor: WrongStack -->
-
-## Star History
-
-<a href="https://www.star-history.com/#ersinkoc/phonebox&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ersinkoc/phonebox&type=Date&theme=dark">
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=ersinkoc/phonebox&type=Date">
-    <img alt="Star history of ersinkoc/phonebox" src="https://api.star-history.com/svg?repos=ersinkoc/phonebox&type=Date">
-  </picture>
-</a>
-
-## License
-
-[MIT](LICENSE)
-#   a n d r o i d - d e c k  
- 

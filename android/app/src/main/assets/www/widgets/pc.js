@@ -142,7 +142,7 @@ W.discord = {
       if (src) { const im = new Image(); im.alt = ''; im.onload = () => w.replaceChildren(im); im.src = src; }
       return w;
     };
-    const load = async () => { try { data = await api('/discord'); } catch (_) {} };
+    const load = async () => { try { data = await api('/discord'); render(); } catch (_) {} };
     const img = (kind, id, hash) => `${API}/discord/img?kind=${kind}&id=${encodeURIComponent(id)}&hash=${encodeURIComponent(hash)}`;
     const act = async (action, channel) => {
       if (busy) return; // one press at a time: a double tap must not toggle twice
@@ -156,6 +156,22 @@ W.discord = {
       await load(); busy = null; render(true);
     };
     const render = (force = false) => {
+      const liveDc = D.state && D.state.discord;
+      if (data && data.snapshot) {
+        if (liveDc && liveDc.channelId) {
+          data.snapshot.channelId = liveDc.channelId;
+          data.snapshot.channelName = liveDc.channelName;
+          data.snapshot.channelKind = liveDc.channelKind;
+          data.snapshot.muted = liveDc.muted;
+          data.snapshot.deafened = liveDc.deafened;
+          data.snapshot.members = liveDc.members || data.snapshot.members;
+        } else if (D.state && !liveDc) {
+          data.snapshot.channelId = null;
+          data.snapshot.channelName = null;
+          data.snapshot.channelKind = null;
+          data.snapshot.members = [];
+        }
+      }
       const key = JSON.stringify([data, busy, [...open], box.clientHeight]);
       if (!force && key === lastKey) return;
       lastKey = key;
@@ -176,7 +192,7 @@ W.discord = {
         btn('mute', emo(s.muted ? '🔇' : '🎙️'), s.muted, 'mute'), btn('deaf', emo(s.deafened ? '🔕' : '🎧'), s.deafened, 'deafen'),
         s.channelId ? btn('leave', emo('📞'), false, 'leave') : null)];
       if (s.channelId && s.members.length) {
-        kids.push(h('div', 'dc-members', ...s.members.map((m) => h('span', 'dc-member' + (m.deafened ? ' deaf' : m.muted ? ' muted' : ''), ico(m.avatar && img('user', m.id, m.avatar), m.name), rich((m.deafened ? '🔕 ' : m.muted ? '🔇 ' : '') + m.name)))));
+        kids.push(h('div', 'dc-members', ...s.members.map((m) => h('span', 'dc-member' + (m.speaking ? ' speaking' : '') + (m.deafened ? ' deaf' : m.muted ? ' muted' : ''), ico(m.avatar && img('user', m.id, m.avatar), m.name), rich((m.speaking ? '🔊 ' : m.deafened ? '🔕 ' : m.muted ? '🔇 ' : '') + m.name)))));
       }
       if (o.channels !== false && s.channels.length) {
         // one block per server; tap it to unfold its voice channels (the server you are in starts unfolded)
@@ -218,6 +234,188 @@ W.discord = {
     const tick = every(2000, async () => { await load(); render(); });
     return { update: () => { tick(); render(); } };
   },
+};
+
+// Discord Voice Overlay: highlights active speakers with fade-in and glowing avatar ring,
+// folds large rooms (+X others in call), prioritizes active speakers to the top.
+W['discord-voice'] = {
+  needs: ['state', 'tick'],
+  create(box, { o }) {
+    let data = null, lastKey = '', busy = null, expanded = false;
+    const maxVis = Math.max(2, o.maxVisible || 4);
+
+    const ico = (src, name, isSpeaking) => {
+      const wrap = h('div', 'dc-v-avatar-wrap');
+      const av = h('div', 'dc-v-avatar', (name || '?').trim().charAt(0).toUpperCase() || '?');
+      if (src) {
+        const im = new Image();
+        im.alt = '';
+        im.onload = () => av.replaceChildren(im);
+        im.src = src;
+      }
+      wrap.appendChild(av);
+      return wrap;
+    };
+
+    const load = async () => {
+      try { data = await api('/discord'); render(); } catch (_) {}
+    };
+
+    const img = (kind, id, hash) =>
+      `${API}/discord/img?kind=${kind}&id=${encodeURIComponent(id)}&hash=${encodeURIComponent(hash)}`;
+
+    const act = async (action) => {
+      if (busy) return;
+      haptic();
+      busy = action; render(true);
+      try {
+        const r = await fetch(`${API}/discord/${action}`, {
+          method: 'POST', cache: 'no-store', headers: PANEL_HEADERS
+        });
+        if (!r.ok) toast((await r.json().catch(() => ({}))).error || t('w.discord.failed'), 'err');
+      } catch (_) { toast(t('panel.pcNoAnswer'), 'err'); }
+      await new Promise((done) => setTimeout(done, 500));
+      await load(); busy = null; render(true);
+    };
+
+    const render = (force = false) => {
+      const liveDc = D.state && D.state.discord;
+      if (data && data.snapshot) {
+        if (liveDc && liveDc.channelId) {
+          data.snapshot.channelId = liveDc.channelId;
+          data.snapshot.channelName = liveDc.channelName;
+          data.snapshot.channelKind = liveDc.channelKind;
+          data.snapshot.muted = liveDc.muted;
+          data.snapshot.deafened = liveDc.deafened;
+          data.snapshot.members = liveDc.members || data.snapshot.members;
+        } else if (D.state && !liveDc) {
+          data.snapshot.channelId = null;
+          data.snapshot.channelName = null;
+          data.snapshot.channelKind = null;
+          data.snapshot.members = [];
+        }
+      }
+
+      const key = JSON.stringify([data, busy, expanded, box.clientHeight]);
+      if (!force && key === lastKey) return;
+      lastKey = key;
+
+      box.className = 'w-body w-discord-voice';
+      if (!data) { box.replaceChildren(h('div', 'dc-v-empty', h('div', 'empty', t('w.loading')))); return; }
+      if (!data.enabled) {
+        box.replaceChildren(
+          h('div', 'dc-v-empty',
+            h('span', 'dc-v-empty-icon', '💬'),
+            h('div', 'dc-v-empty-text', t('w.discord.turnOn'))
+          )
+        );
+        return;
+      }
+      const s = data.snapshot;
+      if (!s.connected) {
+        box.replaceChildren(
+          h('div', 'dc-v-empty',
+            h('span', 'dc-v-empty-icon', '💬'),
+            h('div', 'dc-v-empty-text', s.error || t('panel.connecting'))
+          )
+        );
+        return;
+      }
+
+      if (!s.channelId) {
+        box.replaceChildren(
+          h('div', 'dc-v-empty',
+            h('span', 'dc-v-empty-icon', '🎧'),
+            h('div', 'dc-v-empty-text', h('b', null, t('w.discord.notInChannel')), h('br'), h('small', null, 'Conecte-se a uma call no PC'))
+          )
+        );
+        return;
+      }
+
+      const ctl = data.control !== false && o.control !== false;
+      const btn = (cls, label, on, action) => {
+        const b = labelled(
+          h('button', 'dc-btn ' + cls + (on ? ' on' : '') + (busy === action ? ' busy' : ''), label),
+          t({ mute: on ? 'w.a.unmuteMic' : 'w.a.muteMic', deafen: on ? 'w.a.undeafen' : 'w.a.deafen', leave: 'w.a.leave' }[action])
+        );
+        if (ctl && !busy) b.addEventListener('click', (e) => { e.stopPropagation(); act(action); });
+        else b.disabled = true;
+        return b;
+      };
+
+      const header = h('div', 'dc-v-header',
+        h('span', 'dc-v-status-dot'),
+        h('span', 'dc-v-title', emo('🔊'), ' ' + (s.channelName || 'Voice Call')),
+        h('div', 'dc-v-controls',
+          btn('mute', emo(s.muted ? '🔇' : '🎙️'), s.muted, 'mute'),
+          btn('deaf', emo(s.deafened ? '🔕' : '🎧'), s.deafened, 'deafen'),
+          btn('leave', emo('📞'), false, 'leave')
+        )
+      );
+
+      const rawMembers = (s.members || []).slice();
+      rawMembers.sort((a, b) => {
+        if (a.speaking && !b.speaking) return -1;
+        if (!a.speaking && b.speaking) return 1;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+
+      const totalCount = rawMembers.length;
+      const displayMembers = expanded ? rawMembers : rawMembers.slice(0, maxVis);
+      const overflowCount = totalCount - displayMembers.length;
+
+      const memberNodes = displayMembers.map((m) => {
+        const isSpeaking = !!m.speaking;
+        const row = h('div', 'dc-v-member' + (isSpeaking ? ' speaking' : '') + (m.deafened ? ' deaf' : m.muted ? ' muted' : ''),
+          ico(m.avatar && img('user', m.id, m.avatar), m.name, isSpeaking),
+          h('div', 'dc-v-details',
+            h('div', 'dc-v-name-row',
+              h('span', 'dc-v-name', m.name),
+              h('div', 'dc-v-wave', h('span'), h('span'), h('span'))
+            )
+          ),
+          h('div', 'dc-v-badges',
+            m.deafened ? h('span', null, '🔕') : m.muted ? h('span', null, '🔇') : null
+          )
+        );
+        return row;
+      });
+
+      const listContainer = h('div', 'dc-v-list', ...memberNodes);
+      const kids = [header, listContainer];
+
+      if (overflowCount > 0) {
+        const pill = h('div', 'dc-v-overflow-pill',
+          `... + ${overflowCount} pessoa${overflowCount === 1 ? '' : 's'} na sala`
+        );
+        pill.addEventListener('click', () => {
+          haptic();
+          expanded = true;
+          render(true);
+        });
+        kids.push(pill);
+      } else if (expanded && totalCount > maxVis) {
+        const collapsePill = h('div', 'dc-v-overflow-pill', '▲ Recolher lista');
+        collapsePill.addEventListener('click', () => {
+          haptic();
+          expanded = false;
+          render(true);
+        });
+        kids.push(collapsePill);
+      }
+
+      box.replaceChildren(...kids);
+    };
+
+    const tick = every(1000, async () => { await load(); render(); });
+    load();
+    return {
+      update: () => {
+        tick();
+        render();
+      }
+    };
+  }
 };
 
 // Home Assistant entities through the agent (which holds the token). Tap a light, switch, scene… to switch it,

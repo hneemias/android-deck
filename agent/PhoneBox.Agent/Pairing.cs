@@ -80,8 +80,9 @@ public sealed class PairingCodes
     /// The link in the QR code. Everything is in the fragment (after <c>#</c>), which browsers never send to a server,
     /// so opening the link in a browser instead of the app does not leak the code to the web page's host.
     /// </summary>
-    public static string Link(string pc, string fingerprint, int port, IEnumerable<string> hosts, string code) =>
-        "https://ersinkoc.github.io/phonebox/pair/#v=1"
+    public static string Link(string pc, string fingerprint, int port, IEnumerable<string> hosts, string code, string? baseUrl = null) =>
+        (baseUrl?.TrimEnd('/') ?? "https://ersinkoc.github.io/phonebox/pair")
+        + "/#v=1"
         + "&pc=" + Uri.EscapeDataString(pc)
         + "&fp=" + fingerprint
         + "&port=" + port

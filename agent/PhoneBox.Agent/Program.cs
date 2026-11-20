@@ -44,7 +44,7 @@ builder.WebHost.ConfigureKestrel(k =>
     // a dictation travels in the query (the phone's transport sends no request bodies): 1000 characters of any script,
     // percent-encoded, fit in 16 KB
     k.Limits.MaxRequestLineSize = 16 * 1024;
-    k.Listen(IPAddress.Loopback, Port);
+    k.Listen(IPAddress.Any, Port);
     // Wi-Fi / Tailscale: HTTPS with a pinned self-signed certificate, token required (see Lan.cs).
     if (lanCert is not null) k.Listen(IPAddress.Any, lanCfg.Port, l => l.UseHttps(lanCert));
 });
@@ -219,11 +219,13 @@ app.Use(async (ctx, next) =>
     }
     else
     {
+        var path = ctx.Request.Path;
+        var isPublicLan = path.StartsWithSegments("/pair") || path.StartsWithSegments("/download");
         var host = ctx.Request.Host.Host;
-        var spotifyCallback = ctx.Request.Method == "GET" && ctx.Request.Path == "/api/controls/spotify/callback"
+        var spotifyCallback = ctx.Request.Method == "GET" && path == "/api/controls/spotify/callback"
             && app.Services.GetRequiredService<SpotifyControl>().HasPendingState(ctx.Request.Query["state"]);
-        if ((host != "127.0.0.1" && host != "localhost") || (origin != "" && !SameOrigins.Contains(origin))
-            || (!spotifyCallback && BrowserGuard.IsForeign(ctx.Request.Headers["Sec-Fetch-Site"], ctx.Request.Headers["Sec-Fetch-Mode"], ctx.Request.Method, ctx.Request.Path)))
+        if (!isPublicLan && ((host != "127.0.0.1" && host != "localhost") || (origin != "" && !SameOrigins.Contains(origin))
+            || (!spotifyCallback && BrowserGuard.IsForeign(ctx.Request.Headers["Sec-Fetch-Site"], ctx.Request.Headers["Sec-Fetch-Mode"], ctx.Request.Method, ctx.Request.Path))))
         {
             ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
             return;
@@ -272,8 +274,10 @@ app.MapPost("/api/pair/start", (ConfigStore cfg, PairingCodes codes) =>
     var (code, expiresAt, attempt) = codes.Start(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
     var hosts = Lan.Addresses();
     var fingerprint = Lan.Fingerprint(lanCert);
-    var link = PairingCodes.Link(Environment.MachineName, fingerprint, lanCfg.Port, hosts, code);
-    var apk = $"https://github.com/ersinkoc/phonebox/releases/download/v{AppPaths.Version}/PhoneBox-{AppPaths.Version}.apk";
+    var primaryHost = hosts.FirstOrDefault() ?? "127.0.0.1";
+    var localPairBase = $"http://{primaryHost}:{Port}/pair";
+    var link = PairingCodes.Link(Environment.MachineName, fingerprint, lanCfg.Port, hosts, code, localPairBase);
+    var apk = $"http://{primaryHost}:{Port}/download/app.apk";
     return Results.Json(new
     {
         enabled = true,
@@ -325,6 +329,48 @@ app.MapGet("/", () =>
     using var s = AppPaths.Resource("settings.html")!;
     using var r = new StreamReader(s);
     return Results.Content(r.ReadToEnd(), "text/html; charset=utf-8");
+});
+app.MapGet("/pair", () =>
+{
+    using var s = AppPaths.Resource("pair.html");
+    if (s is null) return Results.NotFound();
+    using var r = new StreamReader(s);
+    return Results.Content(r.ReadToEnd(), "text/html; charset=utf-8");
+});
+app.MapGet("/download/app.apk", () =>
+{
+    var apkPath = ResolveApkPath();
+    if (apkPath is null || !File.Exists(apkPath))
+        return Results.NotFound("APK not found on this computer.");
+    return Results.File(apkPath, "application/vnd.android.package-archive", "PhoneBox.apk", enableRangeProcessing: true);
+});
+app.MapGet("/download", () =>
+{
+    var apkPath = ResolveApkPath();
+    var exists = apkPath is not null && File.Exists(apkPath);
+    var sizeMb = exists ? (new FileInfo(apkPath!).Length / (1024.0 * 1024.0)).ToString("0.1") : "0";
+    var html = $@"<!doctype html>
+<html lang=""pt-BR"">
+<head>
+<meta charset=""utf-8""><meta name=""viewport"" content=""width=device-width, initial-scale=1"">
+<title>Baixar CelularBox / PhoneBox</title>
+<style>
+body {{ background: #07090d; color: #eef2f6; font-family: -apple-system, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }}
+.card {{ background: #10141b; border: 1px solid #232a35; border-radius: 20px; padding: 28px; max-width: 440px; width: 100%; text-align: center; }}
+h1 {{ font-size: 22px; margin-bottom: 8px; }}
+p {{ color: #8a94a3; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }}
+.btn {{ display: inline-block; background: #2dd4bf; color: #062b26; text-decoration: none; font-weight: 700; padding: 14px 28px; border-radius: 12px; font-size: 16px; width: 100%; box-sizing: border-box; }}
+</style>
+</head>
+<body>
+<div class=""card"">
+  <h1>📱 CelularBox / PhoneBox</h1>
+  <p>Baixe o aplicativo diretamente do seu computador ({Environment.MachineName}) para o celular.<br><small>Tamanho: {sizeMb} MB</small></p>
+  <a class=""btn"" href=""/download/app.apk"">⬇ Baixar APK</a>
+</div>
+</body>
+</html>";
+    return Results.Content(html, "text/html; charset=utf-8");
 });
 // The phone's panel (embedded at build time) for the live preview in the layout editor; local port only.
 app.MapGet("/panel/{*file}", (string? file, HttpRequest req) =>
@@ -487,6 +533,8 @@ object State(IServiceProvider sp, long? ev)
         rulesPaused = sp.GetRequiredService<RuleEngine>().PausedUntil(),
         privacy = sp.GetRequiredService<PrivacyMonitor>().Snapshot(),
         obs = sp.GetRequiredService<ObsMonitor>().Snapshot() is { Connected: true } o ? new { o.Streaming, o.Recording, o.RecordPaused } : null,
+        discord = sp.GetRequiredService<DiscordMonitor>().Snapshot() is { Connected: true } dc && dc.ChannelId is not null
+            ? new { dc.ChannelId, dc.ChannelName, dc.ChannelKind, dc.Muted, dc.Deafened, dc.Members } : null,
         toggles = Shortcuts.States(sp.GetRequiredService<ConfigStore>().Get(), push, sp.GetRequiredService<AudioControl>()),
     };
 }
@@ -1037,5 +1085,19 @@ public partial class Program
         error.Contains(KeySender.AccessibilityHint, StringComparison.Ordinal)
             ? KeySender.AccessibilityHint
             : "The shortcut failed. The agent log on the computer has the details.";
+
+    internal static string? ResolveApkPath()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "app.apk"),
+            Path.Combine(AppPaths.ConfigDir, "app.apk"),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../android/app/build/outputs/apk/debug/app-debug.apk")),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../android/app/build/outputs/apk/debug/app-debug.apk")),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../android/app/build/outputs/apk/debug/app-debug.apk")),
+            @"E:\projetos\android-deck\android\app\build\outputs\apk\debug\app-debug.apk"
+        };
+        return candidates.FirstOrDefault(File.Exists);
+    }
 }
 

@@ -132,7 +132,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     ThreadingHTTPServer.daemon_threads = True
-    srv = ThreadingHTTPServer(('127.0.0.1', PORT), Handler)
-    print(f'PhoneBox demo: http://127.0.0.1:{PORT}/  ·  panel /panel/  ·  settings /settings/  ·  webhooks: curl -X POST http://127.0.0.1:{PORT}/api/notify -d hello')
+    srv = ThreadingHTTPServer(('0.0.0.0', PORT), Handler)
+    print(f'PhoneBox demo: http://0.0.0.0:{PORT}/  ·  panel /panel/  ·  settings /settings/  ·  webhooks: curl -X POST http://127.0.0.1:{PORT}/api/notify -d hello')
     try: srv.serve_forever()
     except KeyboardInterrupt: pass

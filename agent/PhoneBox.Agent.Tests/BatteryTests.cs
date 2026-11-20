@@ -149,6 +149,34 @@ public class BatteryTests
     }
 
     [Fact]
+    public void MergeAllDevices_CombinesBluetoothRazerLogitechAndOtherVendors()
+    {
+        var bluetooth = new[]
+        {
+            new DeviceBattery("WH-1000XM5", 70, "headphones", null),
+        };
+        var razer = new[]
+        {
+            new DeviceBattery("Razer DeathAdder V3 Pro", 85, "mouse", false),
+        };
+        var logitech = new[]
+        {
+            new DeviceBattery("G PRO X SUPERLIGHT", 92, "mouse", false),
+            new DeviceBattery("MX Keys", 45, "keyboard", true),
+        };
+        var other = new[]
+        {
+            new DeviceBattery("SteelSeries Arctis Nova 7", 65, "headphones", false),
+        };
+
+        var merged = BatteryMonitor.MergeAllDevices(bluetooth, razer, logitech, other);
+        Assert.Equal(5, merged.Count);
+        Assert.Contains(merged, d => d.Name == "G PRO X SUPERLIGHT" && d.Level == 92 && d.Kind == "mouse");
+        Assert.Contains(merged, d => d.Name == "MX Keys" && d.Charging == true);
+        Assert.Contains(merged, d => d.Name == "SteelSeries Arctis Nova 7" && d.Level == 65);
+    }
+
+    [Fact]
     public void QueryRazerFeatureDevice_EverySentFrameHasReadBitSet()
     {
         var sentFrames = new List<byte[]>();

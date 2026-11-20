@@ -252,18 +252,7 @@ public sealed partial class BatteryMonitor
     /// duplicate Bluetooth entries.
     /// </summary>
     internal static List<DeviceBattery> MergeRazerIntoBluetooth(IEnumerable<DeviceBattery> bluetooth, IEnumerable<DeviceBattery> razer)
-    {
-        var list = bluetooth.ToList();
-        foreach (var r in razer)
-        {
-            var idx = list.FindIndex(b => string.Equals(b.Name, r.Name, StringComparison.OrdinalIgnoreCase));
-            if (idx < 0)
-                list.Add(r);
-            else if (PreferDevice(r, list[idx]))
-                list[idx] = r;
-        }
-        return list;
-    }
+        => MergeAllDevices(bluetooth, razer);
 
     private static bool PreferDevice(DeviceBattery candidate, DeviceBattery existing)
         => (candidate.Charging is not null && existing.Charging is null)

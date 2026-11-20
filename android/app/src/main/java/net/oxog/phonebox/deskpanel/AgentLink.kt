@@ -412,6 +412,7 @@ class AgentLink(private val context: Context) {
                 if (uri == null) return null
                 val raw = when {
                     uri.scheme == "https" && uri.host == "ersinkoc.github.io" && uri.path?.startsWith("/phonebox/pair") == true -> uri.encodedFragment
+                    (uri.scheme == "http" || uri.scheme == "https") && uri.path?.startsWith("/pair") == true -> uri.encodedFragment
                     uri.scheme == "phonebox" && uri.host == "pair" -> uri.encodedQuery
                     else -> null
                 } ?: return null

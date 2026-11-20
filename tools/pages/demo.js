@@ -14,10 +14,10 @@
     lo + (hi - lo) * (0.5 + 0.5 * Math.sin((2 * Math.PI * (now() - START)) / 1000 / period + phase)) + rnd(-noise, noise);
 
   const SHORTCUTS = [
-    ['terminal', 'Terminal', '⌨️', '#4b5563'], ['code', 'VS Code', '📝', '#2f80ed'], ['browser', 'Browser', '🌐', '#0ea5e9'],
-    ['files', 'Files', '📁', '#e5b84b'], ['music', 'Spotify', '🎧', '#1db954'], ['chat', 'Discord', '💬', '#6366f1'],
-    ['snip', 'Snip', '✂️', '#14b8a6'], ['taskmgr', 'Task Manager', '📊', '#22c55e'], ['mute', 'Mute', '🔇', '#f59e0b'],
-    ['screenoff', 'Screen Off', '🌙', '#8b5cf6'], ['lock', 'Lock', '🔒', '#ef4444'], ['settings', 'Settings', '⚙️', '#94a3b8'],
+    ['terminal', 'Terminal', '⌨️', '#4b5563'], ['code', 'VS Code', '📝', '#2f80ed'], ['browser', 'Navegador', '🌐', '#0ea5e9'],
+    ['files', 'Arquivos', '📁', '#e5b84b'], ['music', 'Spotify', '🎧', '#1db954'], ['chat', 'Discord', '💬', '#6366f1'],
+    ['snip', 'Captura', '✂️', '#14b8a6'], ['taskmgr', 'Gerenciador de Tarefas', '📊', '#22c55e'], ['mute', 'Mudo', '🔇', '#f59e0b'],
+    ['screenoff', 'Desligar Tela', '🌙', '#8b5cf6'], ['lock', 'Bloquear', '🔒', '#ef4444'], ['settings', 'Configurações', '⚙️', '#94a3b8'],
   ].map(([id, label, icon, color]) => ({ id, label, icon, color, cmd: id === 'mute' ? 'builtin:mute' : 'demo', args: null, toggle: false }));
   const PAGES = ['home', 'dashboard', 'ai', 'work', 'system', 'procs', 'deck', 'music', 'status', 'ambient', 'world', 'daily', 'markets', 'feeds', 'focus', 'calm', 'clock', 'automation', 'planner', 'nightstand', 'weekend', 'focuswork',
     'codexbar', 'devops', 'audio-deck', 'stream-deck', 'meeting-deck', 'development-deck', 'music-deck', 'system-deck'];
@@ -57,7 +57,7 @@
         { id: 'music', label: 'Music', levels: [], actions: [], output: null, input: null, defaults: {} }],
         spotifyToken: null, spotifyDevice: null, mixerExecutable: null, mixerLibrary: null, spotifyClientId: null, spotifyRefreshToken: null },
       deviceSerial: null, adbPath: null,
-      weather: { city: 'Tallinn', lat: 59.437, lon: 24.745, unit: 'celsius', model: '' },
+      weather: { city: 'São Paulo', lat: -23.5505, lon: -46.6333, unit: 'celsius', model: '' },
       night: { enabled: false, start: '00:30', end: '07:30', brightness: 0.02 },
       display: { appearance: null, showSeconds: true, hour12: false, idleReturnSec: 0, vibrate: true, volumeKeys: true, orientation: 'landscape', theme: 'default', accent: '#2dd4bf',
         pixelShift: false, idleDimMin: 0,
@@ -208,6 +208,23 @@
       // the microphone is "in use" for 20 s of every minute, to show the On air widget
       privacy: (() => { const on = (now() / 1000) % 60 < 20; return { mic: on, camera: false, micApps: on ? ['Zoom'] : [], cameraApps: [] }; })(),
       obs: { streaming: !!obs.streamingSince, recording: !!obs.recordingSince, recordPaused: obs.paused },
+      discord: dc.in ? {
+        channelId: dc.in,
+        channelName: 'Game Night',
+        channelKind: 'voice',
+        muted: dc.muted,
+        deafened: dc.deaf,
+        members: [
+          { id: '1', name: 'demo (Você)', muted: dc.muted, deafened: dc.deaf, speaking: !dc.muted && (Math.floor(Date.now() / 3000) % 3 === 0) },
+          { id: '2', name: 'Ada Lovelace', muted: false, deafened: false, speaking: (Math.floor(Date.now() / 3000) % 3 === 1) },
+          { id: '3', name: 'Linus Torvalds', muted: true, deafened: false, speaking: false },
+          { id: '4', name: 'Grace Hopper', muted: false, deafened: false, speaking: (Math.floor(Date.now() / 3000) % 6 === 2) },
+          { id: '5', name: 'Alan Turing', muted: false, deafened: false, speaking: false },
+          { id: '6', name: 'Margaret Hamilton', muted: false, deafened: false, speaking: false },
+          { id: '7', name: 'Claude Shannon', muted: false, deafened: false, speaking: false },
+          { id: '8', name: 'Dennis Ritchie', muted: false, deafened: false, speaking: false },
+        ]
+      } : null,
       toggles: { ...toggles, ...Object.fromEntries(muteKeys.map((id) => [id, audio.muted])) },
     };
   }
@@ -572,16 +589,29 @@
     if (path === '/api/obs') { const c = await config(); return json({ ...obsState(), enabled: c.obs?.enabled !== false, control: widgets(c).some((w) => w.type === 'obs' && w.options?.control === true) }); }
     if (path === '/api/discord') {
       const c = await config();
-      return json({ enabled: true, control: widgets(c).some((w) => w.type === 'discord' && w.options?.control === true), snapshot: {
+      const sec = Math.floor(Date.now() / 3000);
+      const isDemoSpeaking = sec % 3 === 0;
+      const isAdaSpeaking = sec % 3 === 1;
+      const isGraceSpeaking = sec % 6 === 2;
+      return json({ enabled: true, control: widgets(c).some((w) => (w.type === 'discord' || w.type === 'discord-voice') && w.options?.control !== false), snapshot: {
         connected: true, error: null, user: 'demo', muted: dc.muted, deafened: dc.deaf, channelId: dc.in, channelName: dc.in ? 'Game night' : null, channelKind: dc.in ? 'voice' : null,
-        members: dc.in ? [{ id: '1', name: 'demo', muted: dc.muted, deafened: dc.deaf }, { id: '2', name: 'Ada', muted: false, deafened: false }, { id: '3', name: 'Linus', muted: true, deafened: false }] : [],
+        members: dc.in ? [
+          { id: '1', name: 'demo (Você)', muted: dc.muted, deafened: dc.deaf, speaking: !dc.muted && isDemoSpeaking },
+          { id: '2', name: 'Ada Lovelace', muted: false, deafened: false, speaking: isAdaSpeaking },
+          { id: '3', name: 'Linus Torvalds', muted: true, deafened: false, speaking: false },
+          { id: '4', name: 'Grace Hopper', muted: false, deafened: false, speaking: isGraceSpeaking },
+          { id: '5', name: 'Alan Turing', muted: false, deafened: false, speaking: false },
+          { id: '6', name: 'Margaret Hamilton', muted: false, deafened: false, speaking: false },
+          { id: '7', name: 'Claude Shannon', muted: false, deafened: false, speaking: false },
+          { id: '8', name: 'Dennis Ritchie', muted: false, deafened: false, speaking: false },
+        ] : [],
         channels: [{ id: 'c1', name: 'Game night', guild: 'Friends' }, { id: 'c2', name: 'Stand-up', guild: 'Work' }],
         notifications: [{ ts: now() - 60000, title: 'Ada', body: 'are you joining?' }] } });
     }
     if (path.startsWith('/api/discord/') && method === 'POST') {
-      if (!allows(await config(), (t) => t === 'discord')) return json({ error: "controlling Discord is turned off in the widget's settings" }, 400);
+      if (!allows(await config(), (t) => t === 'discord' || t === 'discord-voice')) return json({ error: "controlling Discord is turned off in the widget's settings" }, 400);
       const a = path.slice(13);
-      if (a === 'mute') dc.muted = !dc.muted; else if (a === 'deafen') dc.deaf = !dc.deaf; else if (a === 'leave') dc.in = null; else if (a === 'join') dc.in = q.get('channel'); else return json({ error: 'unknown action' }, 400);
+      if (a === 'mute') dc.muted = !dc.muted; else if (a === 'deafen') dc.deaf = !dc.deaf; else if (a === 'leave') dc.in = null; else if (a === 'join') dc.in = q.get('channel') || 'c1'; else return json({ error: 'unknown action' }, 400);
       return json({ ok: true });
     }
     if (path === '/api/phones') return json([
@@ -591,10 +621,10 @@
     if (path === '/api/network/adapters') return json([{ name: 'Ethernet', description: 'Intel(R) Ethernet Controller I225-V', auto: true },
       { name: 'Wi-Fi', description: 'Intel(R) Wi-Fi 6E AX211 160MHz', auto: true }, { name: 'WireGuard', description: 'WireGuard Tunnel', auto: false }]);
     if (path === '/api/batteries') return json({ devices: [
-      { name: 'WH-1000XM5', level: 64, kind: 'headphones', charging: null },
-      { name: 'MX Master 3S', level: 85, kind: 'mouse', charging: null },
-      { name: 'MX Keys', level: 18, kind: 'keyboard', charging: null },
-      { name: 'Xbox Wireless Controller', level: 40, kind: 'controller', charging: null },
+      { name: 'WH-1000XM5', level: 64, kind: 'headphones', charging: false },
+      { name: 'G PRO X SUPERLIGHT', level: 92, kind: 'mouse', charging: false },
+      { name: 'MX Keys', level: 18, kind: 'keyboard', charging: true },
+      { name: 'Xbox Wireless Controller', level: 40, kind: 'controller', charging: false },
     ] });
     // photo frame: like the agent, ids from an enabled page's widget, then one image by id (generated pictures here)
     if (path === '/api/photos') { const c = await config(); return json(shownWidgets(c).some((w) => w.type === 'photos') ? { ids: DEMO_PHOTOS.map((p) => p[0]), error: null, scanning: false } : { ids: [], error: 'Add a Photo frame widget to a page to show photos', scanning: false }); }

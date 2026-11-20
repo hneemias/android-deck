@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Emparelhar CelularBox / PhoneBox</title>
+<style>
+:root { --bg: #07090d; --panel: #10141b; --line: #232a35; --text: #eef2f6; --muted: #8a94a3; --accent: #2dd4bf; --warn: #f59e0b; color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 16px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif; min-height: 100vh; }
+.wrap { max-width: 520px; margin: 0 auto; padding: 32px 16px; }
+header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+h1 { font-size: 20px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+.card h2 { font-size: 17px; margin-bottom: 6px; }
+.muted { color: var(--muted); font-size: 14px; }
+.btn { display: block; text-align: center; text-decoration: none; font-weight: 600; border-radius: 12px; padding: 14px; margin-top: 14px; font-size: 16px; }
+.primary { background: var(--accent); color: #062b26; }
+.secondary { border: 1px solid var(--line); color: var(--text); }
+.warn { color: var(--warn); }
+code { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>📱 CelularBox / PhoneBox</h1></header>
+
+  <div class="card" id="ok" hidden>
+    <h2>Emparelhar este celular com o computador?</h2>
+    <p class="muted">“<span id="pc"></span>” em <span id="hosts"></span>. Confira se a janela de emparelhamento no computador exibe o código
+      <b id="check"></b> e continue apenas se você iniciou o emparelhamento lá.</p>
+    <a class="btn primary" id="open" href="#">Abrir no CelularBox</a>
+    <p class="muted" id="plainWrap" hidden style="margin-top:10px">Se o aplicativo não abrir automaticamente:
+      <a id="plain" href="#" style="color:var(--accent)">toque aqui para abrir o link de pareamento</a>. Se o Android perguntar qual app usar, escolha o CelularBox.</p>
+    <p class="muted" style="margin-top:10px">O código de pareamento funciona uma única vez por 5 minutos. Se expirar, gere um novo no PC.</p>
+  </div>
+
+  <div class="card" id="bad" hidden>
+    <h2 class="warn">Link de emparelhamento incompleto ou expirado</h2>
+    <p class="muted">Escaneie novamente o QR code gerado pelo PhoneBox no computador em Configurações › Geral › Wi-Fi &amp; Tailscale.</p>
+  </div>
+
+  <div class="card">
+    <h2>Ainda não tem o app instalado?</h2>
+    <p class="muted">Baixe o aplicativo diretamente do seu computador (Android 5.0 ou superior):</p>
+    <a class="btn secondary" href="/download/app.apk">⬇ Baixar APK do Computador</a>
+  </div>
+</div>
+<script>
+(() => {
+  const raw = location.hash.slice(1);
+  const local = (h) => {
+    const b = h.split('.').map((x) => (/^\d{1,3}$/.test(x) ? +x : NaN));
+    return b.length === 4 && b.every((x) => x >= 0 && x <= 255)
+      && (b[0] === 10 || (b[0] === 172 && b[1] >= 16 && b[1] <= 31) || (b[0] === 192 && b[1] === 168) || (b[0] === 100 && b[1] >= 64 && b[1] <= 127));
+  };
+  history.replaceState(null, '', location.pathname);
+  const p = new URLSearchParams(raw);
+  const hosts = (p.get('h') || '').split(',').map((h) => h.trim()).filter(local).slice(0, 8);
+  const port = /^\d{1,5}$/.test(p.get('port') || '') ? +p.get('port') : 0;
+  const ok = p.get('v') === '1' && /^[0-9a-f]{64}$/i.test(p.get('fp') || '') && /^[A-Za-z0-9_-]{16,64}$/.test(p.get('c') || '')
+    && port >= 1 && port <= 65535 && hosts.length > 0;
+  if (!ok) { document.getElementById('bad').hidden = false; return; }
+  p.set('h', hosts.join(','));
+  p.set('port', String(port));
+  document.getElementById('pc').textContent = (p.get('pc') || 'seu computador').slice(0, 64);
+  document.getElementById('hosts').textContent = hosts.join(', ') + ' (porta ' + port + ')';
+  document.getElementById('check').textContent = (p.get('fp').slice(0, 4) + ' ' + p.get('fp').slice(4, 8)).toUpperCase();
+  const query = ['v', 'pc', 'fp', 'port', 'h', 'c'].filter((k) => p.has(k)).map((k) => k + '=' + encodeURIComponent(p.get(k))).join('&');
+  const android = /Android/i.test(navigator.userAgent);
+  const fallback = encodeURIComponent('/download/app.apk');
+  document.getElementById('open').href = android
+    ? `intent://pair?${query}#Intent;scheme=phonebox;package=net.oxog.phonebox.deskpanel;S.browser_fallback_url=${fallback};end`
+    : `phonebox://pair?${query}`;
+  document.getElementById('plain').href = `phonebox://pair?${query}`;
+  document.getElementById('plainWrap').hidden = !android;
+  document.getElementById('ok').hidden = false;
+})();
+</script>
+</body>
+</html>
