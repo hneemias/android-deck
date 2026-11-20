@@ -1,6 +1,6 @@
 name: pages
 
-# Publishes the live web demo (the real panel and settings page with made-up data) to GitHub Pages.
+# Publishes the live web demo (the real panel and settings page with demo data) to GitHub Pages.
 on:
   push:
     branches: [main]
