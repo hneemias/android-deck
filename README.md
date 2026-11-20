@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ersinkoc/phonebox/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/ersinkoc/phonebox/build.yml?branch=main&style=for-the-badge&logo=github&label=Build" alt="Build Status"></a>
-  <a href="https://github.com/ersinkoc/phonebox/releases/latest"><img src="https://img.shields.io/github/v/release/ersinkoc/phonebox?style=for-the-badge&color=2dd4bf&label=Release" alt="Latest Release"></a>
+  <a href="https://github.com/hneemias/android-deck/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/hneemias/android-deck/build.yml?branch=main&style=for-the-badge&logo=github&label=Build" alt="Build Status"></a>
+  <a href="https://github.com/hneemias/android-deck/releases/latest"><img src="https://img.shields.io/github/v/release/hneemias/android-deck?style=for-the-badge&color=2dd4bf&label=Release" alt="Latest Release"></a>
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-512bd4?style=for-the-badge&logo=dotnet&logoColor=white" alt="Windows, Linux, macOS; .NET 10">
   <img src="https://img.shields.io/badge/Android-5.0%2B-3ddc84?style=for-the-badge&logo=android&logoColor=white" alt="Android 5.0+">
   <img src="https://img.shields.io/badge/Privacy-100%25%20Local%20%2F%20No%20Cloud-success?style=for-the-badge&logo=shield" alt="100% Local">
@@ -130,19 +130,19 @@ flowchart LR
 ### Step 1: Install the Desktop Agent
 
 #### Windows (Standalone / Self-Contained)
-1. Download the latest **`CelularBox-Completo.zip`** from [Releases](https://github.com/ersinkoc/phonebox/releases/latest).
+1. Download the latest **`CelularBox-Completo.zip`** from [Releases](https://github.com/hneemias/android-deck/releases/latest).
 2. Extract the folder and double-click **`PhoneBoxAgent.exe`**.
 3. *No .NET installation or runtimes required!* The agent starts in your system tray and opens the settings page at `http://127.0.0.1:8765`.
 
 *Or install via PowerShell:*
 ```powershell
-irm https://raw.githubusercontent.com/ersinkoc/phonebox/main/setup.ps1 | iex
+irm https://raw.githubusercontent.com/hneemias/android-deck/main/setup.ps1 | iex
 ```
 
 #### Linux & macOS
 Run the automated installer:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ersinkoc/phonebox/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hneemias/android-deck/main/setup.sh | bash
 ```
 
 ---
@@ -150,7 +150,7 @@ curl -fsSL https://raw.githubusercontent.com/ersinkoc/phonebox/main/setup.sh | b
 ### Step 2: Install the Android App
 
 * **Via PC QR Code:** Open settings on your PC (`http://127.0.0.1:8765`), click **"Pair a phone over Wi-Fi"**, and scan **QR Code 1** with your phone to download `CelularBox-App.apk` directly from your PC.
-* **Via Direct Download:** Download `CelularBox-App.apk` from the [Releases](https://github.com/ersinkoc/phonebox/releases/latest) page and install it on your Android device.
+* **Via Direct Download:** Download `CelularBox-App.apk` from the [Releases](https://github.com/hneemias/android-deck/releases/latest) page and install it on your Android device.
 
 ---
 
@@ -197,8 +197,8 @@ Open **`http://127.0.0.1:8765/settings/#pages`** in your browser to design your 
 
 ```bash
 # Clone the repository
-git clone https://github.com/ersinkoc/phonebox.git
-cd phonebox
+git clone https://github.com/hneemias/android-deck.git
+cd android-deck
 
 # Run tests
 dotnet test agent/PhoneBox.Agent.Tests
