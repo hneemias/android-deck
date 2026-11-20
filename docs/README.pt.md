@@ -1,6 +1,9 @@
 <p align="center"><img src="../agent/PhoneBox.Agent/phonebox.ico" width="72" alt="Ícone do PhoneBox"></p>
 
-<h1 align="center">PhoneBox</h1>
+<h1 align="center">PhoneBox / CelularBox</h1>
+
+> [!NOTE]
+> **Origem & Reconhecimento:** Este projeto é um fork / evolução do projeto de código aberto [PhoneBox](https://github.com/ersinkoc/phonebox) de autoria de [Ersin Koç](https://github.com/ersinkoc), incluindo distribuição e pareamento Wi-Fi 100% locais, monitoramento de bateria de periféricos sem fio (Razer e Logitech G), correções no Discord RPC e transmissão de áudio do PC para o celular em tempo real.
 
 <p align="center">
   <a href="../README.md">English</a> ·

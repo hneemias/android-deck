@@ -33,6 +33,11 @@
   <a href="docs/README.zh.md">中文 (简体)</a>
 </p>
 
+> [!NOTE]
+> **Origem & Reconhecimento / Origin & Attribution:**  
+> Este projeto é uma evolução / fork melhorado do incrível projeto de código aberto **[PhoneBox](https://github.com/ersinkoc/phonebox)** criado por **[Ersin Koç](https://github.com/ersinkoc)**.  
+> Esta versão introduz pareamento Wi-Fi e distribuição de APK 100% in-house/local (sem redirecionamentos externos para o GitHub), monitoramento de bateria de periféricos sem fio (**Razer Synapse / HID** e **Logitech G / HID++**), correções de estabilidade no Discord RPC, suporte a streaming de áudio do PC para o celular em tempo real e localização refinada. Todos os créditos da arquitetura base original pertencem a Ersin Koç e aos colaboradores do PhoneBox!
+
 ---
 
 <p align="center">
@@ -210,6 +215,14 @@ dotnet run --project agent/PhoneBox.Agent/PhoneBox.Agent.csproj -f net10.0-windo
 cd android
 ./gradlew assembleDebug
 ```
+
+---
+
+## 👏 Credits & Attribution
+
+This project is built upon the solid foundation of **[PhoneBox](https://github.com/ersinkoc/phonebox)**, created and maintained by **[Ersin Koç](https://github.com/ersinkoc)** under the MIT License.
+
+A special thanks to Ersin Koç and the contributors of PhoneBox for designing the initial system architecture, the clean UI aesthetic, and the virtual layout editor.
 
 ---
 
