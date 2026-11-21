@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.23 — 2026-11-21
+
+Auto-update via hneemias/android-deck GitHub Releases, enhanced system tray icon with live Wi-Fi/USB status and Portuguese localization.
+
+- **Auto-Update**: Configured repository target to `hneemias/android-deck` with background updates.
+- **System Tray**: Live connection status for Wi-Fi and USB devices with localized context menu and tooltips.
+
 ## Unreleased
 
 **Settings page**
