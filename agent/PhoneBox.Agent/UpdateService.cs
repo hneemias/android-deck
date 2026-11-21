@@ -38,7 +38,10 @@ public sealed class UpdateService(ConfigStore cfg, AdbReverse adb, IHostApplicat
     /// <summary>Phone app version, reported by the app on every request (X-PhoneBox-App header).</summary>
     public static volatile string? AppVersion;
 
-    public static bool RunningInstalled => SameFolder(AppContext.BaseDirectory, InstallDir);
+    public static bool RunningInstalled =>
+        SameFolder(AppContext.BaseDirectory, InstallDir) ||
+        (!AppContext.BaseDirectory.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar) &&
+         File.Exists(Path.Combine(AppContext.BaseDirectory, ExeName)));
 
     /// <summary>
     /// On macOS/Linux the .NET host reports the agent's folder with symbolic links resolved, while the install folder
@@ -263,12 +266,20 @@ public sealed class UpdateService(ConfigStore cfg, AdbReverse adb, IHostApplicat
         var staging = Path.Combine(DownloadsDir, "agent-" + _latest.Version);
         if (Directory.Exists(staging)) Directory.Delete(staging, true);
         ZipFile.ExtractToDirectory(zip, staging);
-        if (!File.Exists(Path.Combine(staging, ExeName))) throw new InvalidOperationException($"the agent package has no {ExeName}");
 
-        foreach (var src in Directory.EnumerateFiles(staging, "*", SearchOption.AllDirectories))
+        var sourceDir = staging;
+        if (!File.Exists(Path.Combine(sourceDir, ExeName)))
         {
-            var rel = Path.GetRelativePath(staging, src);
-            var dst = Path.Combine(InstallDir, rel);
+            var nested = Directory.EnumerateDirectories(staging).FirstOrDefault(d => File.Exists(Path.Combine(d, ExeName)));
+            if (nested is not null) sourceDir = nested;
+        }
+        if (!File.Exists(Path.Combine(sourceDir, ExeName))) throw new InvalidOperationException($"the agent package has no {ExeName}");
+
+        var targetDir = RunningInstalled && SameFolder(AppContext.BaseDirectory, InstallDir) ? InstallDir : AppContext.BaseDirectory;
+        foreach (var src in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            var rel = Path.GetRelativePath(sourceDir, src);
+            var dst = Path.Combine(targetDir, rel);
             Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
             if (File.Exists(dst))
             {
@@ -279,7 +290,7 @@ public sealed class UpdateService(ConfigStore cfg, AdbReverse adb, IHostApplicat
             File.Move(src, dst);
         }
         if (!OperatingSystem.IsWindows()) // zip files do not keep the executable bit
-            File.SetUnixFileMode(Path.Combine(InstallDir, ExeName), (UnixFileMode)0b111_101_101);
+            File.SetUnixFileMode(Path.Combine(targetDir, ExeName), (UnixFileMode)0b111_101_101);
         log.LogInformation("agent updated to {Version}, restarting", _latest.Version);
         _state = "restarting";
         AppRestart.Requested = true;
@@ -438,9 +449,23 @@ public sealed class UpdateService(ConfigStore cfg, AdbReverse adb, IHostApplicat
         {
             var name = a.GetProperty("name").GetString() ?? "";
             var url = a.GetProperty("browser_download_url").GetString();
-            if (name.StartsWith("PhoneBox-", StringComparison.OrdinalIgnoreCase) && name.EndsWith(".apk", StringComparison.OrdinalIgnoreCase)) apk = url;
-            if (name.StartsWith("PhoneBoxAgent-", StringComparison.OrdinalIgnoreCase) && name.EndsWith($"-{rid}.zip", StringComparison.OrdinalIgnoreCase)) zip = url;
-            if (name.StartsWith("SHA256SUMS-", StringComparison.OrdinalIgnoreCase) && name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)) sums = url;
+            if (name.EndsWith(".apk", StringComparison.OrdinalIgnoreCase)) apk = url;
+            if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                if (name.Contains($"-{rid}.zip", StringComparison.OrdinalIgnoreCase) ||
+                    name.Contains($"-{rid}", StringComparison.OrdinalIgnoreCase))
+                {
+                    zip = url;
+                }
+                else if (rid == "win-x64" && zip is null &&
+                         (name.Contains("win-x64", StringComparison.OrdinalIgnoreCase) ||
+                          name.Contains("win", StringComparison.OrdinalIgnoreCase) ||
+                          name.Contains("Completo", StringComparison.OrdinalIgnoreCase)))
+                {
+                    zip = url;
+                }
+            }
+            if (name.StartsWith("SHA256SUMS", StringComparison.OrdinalIgnoreCase) && name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase)) sums = url;
         }
         var tag = release.GetProperty("tag_name").GetString() ?? "";
         return new Release(tag.TrimStart('v', 'V'), release.GetProperty("html_url").GetString(), apk, zip, sums);
